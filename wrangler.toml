@@ -1,2 +1,2 @@
-main = "./worker.js"
+name = "events"main = "./worker.js"
 compatibility_date = "2026-01-19"
