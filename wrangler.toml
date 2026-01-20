@@ -1,0 +1,9 @@
+name = "events-worker"
+main = "./worker.js"
+compatibility_date = "2026-01-19"
+
+[vars]
+FB_PIXEL_ID
+FB_ACCESS_TOKEN
+GA_MEASUREMENT_ID
+GA_ACCESS_TOKEN
