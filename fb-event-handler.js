@@ -1,32 +1,5 @@
-export default async function (event, env) {
+export default async function (payload, env) {
     console.info('Facebook event process started')
-
-    const payload = {
-        data: [
-            {
-                event_name: event.nameFb,
-                event_id: event.id,
-                event_time: event.timestamp,
-                action_source: 'website',
-                event_source_url: event.referrer,
-                user_data: {
-                    ph: event.hashedUserPhone,
-                    em: event.hashedUserEmail,
-                    fbp: event.cookieFbp,
-                    fbc: event.cookieFbc,
-                    client_user_agent: event.userAgent,
-                    client_ip_address: event.clientIp
-                },
-                custom_data: {
-                    page_referrer: event.referrer,
-                    utm_source: event.utmSource,
-                    utm_medium: event.utmMedium,
-                    utm_campaign: event.utmCampaign,
-                    utm_content: event.utmContent,
-                    utm_term: event.utmTerm
-                }
-            }]
-    }
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)

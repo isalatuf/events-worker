@@ -1,29 +1,5 @@
-export default async function (event, env) {
+export default async function (payload, env) {
     console.info('Google Analytics event process started')
-
-    const payload = {
-        client_id: event.clientIp,
-        user_properties: {
-            phone: event.hashedUserPhone,
-            email: event.hashedUserEmail
-        },
-        events: [
-            {
-                name: event.nameGa,
-                params: {
-                    page_location: event.referrer,
-                    page_referrer: event.referrer,
-                    event_id: event.id,
-                    engagement_time_msec: 1,
-                    utm_source: event.utmSource,
-                    utm_medium: event.utmMedium,
-                    utm_campaign: event.utmCampaign,
-                    utm_content: event.utmContent,
-                    utm_term: event.utmTerm
-                }
-            }
-        ]
-    }
 
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
