@@ -102,7 +102,7 @@ export default async function (body, headers, env) {
 
     if (env.GA_MEASUREMENT_ID && env.GA_ACCESS_TOKEN && nameMap.ga) {
         const gaPayload = {
-            client_id: clientIp,
+            client_id: user?.clientId,
             user_properties: {
                 phone: encryptedUserPhone,
                 email: encryptedUserEmail
