@@ -28,33 +28,44 @@ export default async function (body, headers, env) {
     const userAgent = headers['user-agent'] || null
 
     function extractUtms(url) {
-        if (!url) return { utm: null }
+        let utms = {
+            utm_source: null,
+            utm_medium: null,
+            utm_campaign: null,
+            utm_content: null,
+            utm_term: null,
+        };
 
-        const params = url.split('?')[1]
-        if (!params) return { utm: null }
+        if (!url) return utms;
 
-        const utms = {}
-        params.split('&').forEach(p => {
-            const [k, v] = p.split('=')
-            if (k?.startsWith('utm_') && v) {
-                utms[k.replace(/^utm_/, '')] = decodeURIComponent(v)
+        const params = url.split("?")[1];
+        if (!params) return utms;
+
+        params.split("&").forEach((p) => {
+            const [rawKey, rawValue] = p.split("=");
+            if (!rawKey || !rawValue) return;
+
+            const key = decodeURIComponent(rawKey);
+            const value = decodeURIComponent(rawValue);
+
+            if (key in utms) {
+                utms[key] = value;
             }
-        })
-        return utms
+        });
+
+        return utms;
     }
 
-    const utms = referrer ? extractUtms(referrer) : {}
+    const utms = extractUtms(referrer)
 
-    async function sha256(value) {
+    async function encrypt(value) {
         const data = new TextEncoder().encode(value.trim().toLowerCase())
         const hash = await crypto.subtle.digest('SHA-256', data)
         return Array.from(new Uint8Array(hash)).map(item => item.toString(16).padStart(2, '0')).join('')
     }
 
-    const hashedUser = {
-        phone: user?.phone ? await sha256(user.phone) : null,
-        email: user?.email ? await sha256(user.email) : null
-    }
+    const encryptedUserPhone = user?.phone ? await encrypt(user.phone) : null
+    const encryptedUserEmail = user?.email ? await encrypt(user.email) : null
 
     const tasks = []
 
@@ -68,8 +79,8 @@ export default async function (body, headers, env) {
                     action_source: 'website',
                     event_source_url: referrer,
                     user_data: {
-                        ph: hashedUser.phone,
-                        em: hashedUser.email,
+                        ph: encryptedUserPhone,
+                        em: encryptedUserEmail,
                         fbp: cookies.fbp,
                         fbc: cookies.fbc,
                         client_user_agent: userAgent,
@@ -91,8 +102,8 @@ export default async function (body, headers, env) {
         const gaPayload = {
             client_id: clientIp,
             user_properties: {
-                phone: hashedUser.phone,
-                email: hashedUser.email
+                phone: encryptedUserPhone,
+                email: encryptedUserEmail
             },
             events: [
                 {
