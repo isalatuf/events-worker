@@ -81,8 +81,8 @@ export default async function (body, headers, env) {
                     user_data: {
                         ph: encryptedUserPhone,
                         em: encryptedUserEmail,
-                        fbp: cookies.fbp,
-                        fbc: cookies.fbc,
+                        fbp: cookies?.fbp,
+                        fbc: cookies?.fbc,
                         client_user_agent: userAgent,
                         client_ip_address: clientIp
                     },
