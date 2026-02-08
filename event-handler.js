@@ -3,6 +3,7 @@ import handleGaEvent from './ga-event-handler.js'
 
 export default async function (body, headers, env) {
     const { event, user, id, cookies } = body || {}
+    console.log(event)
 
     if (!id) return console.error('Event id is missing')
     if (!event) return console.error('Event name is missing')
