@@ -2,22 +2,22 @@ import handleFbEvent from './fb-event-handler.js'
 import handleGaEvent from './ga-event-handler.js'
 
 export default async function (body, headers, env) {
-    const { name, user, id, cookies } = body || {}
+    const { event, user, id, cookies } = body || {}
 
     if (!id) return console.error('Event id is missing')
-    if (!name) return console.error('Event name is missing')
+    if (!event) return console.error('Event name is missing')
 
-    const nameMap = ({
+    const eventMap = ({
         pageview: { fb: 'PageView', ga: 'page_view' },
         lead: { fb: 'Lead', ga: 'generate_lead' },
         signup: { fb: 'Lead', ga: 'sign_up' },
         checkout: { fb: 'InitiateCheckout', ga: 'begin_checkout' },
         purchase: { fb: 'Purchase', ga: 'purchase' }
-    })[name] || {}
+    })[event] || {}
 
-    if (!nameMap) return console.error('Event name is invalid')
+    if (!eventMap) return console.error('Event name is invalid')
 
-    console.log({ id, name })
+    console.log({ id, event })
 
     const timestamp = Math.floor(Date.now() / 1000)
 
@@ -29,36 +29,41 @@ export default async function (body, headers, env) {
 
     const userAgent = headers['user-agent'] || null
 
-    function extractUtms(url) {
-        let utms = {
-            utm_source: null,
-            utm_medium: null,
-            utm_campaign: null,
-            utm_content: null,
-            utm_term: null,
-        };
+    function extractQueryParams(input, queryParams) {
+        const output = {};
 
-        if (!url) return utms;
+        for (const key of queryParams) {
+            output[key] = null;
+        }
 
-        const params = url.split("?")[1];
-        if (!params) return utms;
+        if (!input) return output;
 
-        params.split("&").forEach((p) => {
-            const [rawKey, rawValue] = p.split("=");
-            if (!rawKey || !rawValue) return;
+        const query = input.split("?")[1];
+        if (!query) return output;
 
-            const key = decodeURIComponent(rawKey);
-            const value = decodeURIComponent(rawValue);
+        const parts = query.split("&");
 
-            if (key in utms) {
-                utms[key] = value;
+        for (let i = 0; i < parts.length; i++) {
+            const [key, value] = parts[i].split("=");
+            if (!key || !value) continue;
+
+            if (key in output) {
+                output[key] = decodeURIComponent(value);
             }
-        });
+        }
 
-        return utms;
+        return output;
     }
 
-    const utms = extractUtms(referrer)
+    const queryParams = [
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_content",
+        "utm_term",
+    ];
+
+    const referrerParams = extractQueryParams(referrer, queryParams)
 
     async function encrypt(value) {
         const data = new TextEncoder().encode(value.trim().toLowerCase())
@@ -71,11 +76,11 @@ export default async function (body, headers, env) {
 
     const tasks = []
 
-    if (env.FB_PIXEL_ID && env.FB_ACCESS_TOKEN && nameMap.fb) {
+    if (env.FB_PIXEL_ID && env.FB_ACCESS_TOKEN && eventMap.fb) {
         const fbPayload = {
             data: [
                 {
-                    event_name: nameMap.fb,
+                    event_name: eventMap.fb,
                     event_id: id,
                     event_time: timestamp,
                     action_source: 'website',
@@ -90,7 +95,7 @@ export default async function (body, headers, env) {
                     },
                     custom_data: {
                         page_referrer: referrer,
-                        ...utms
+                        ...referrerParams
                     },
                 }]
         }
@@ -100,7 +105,7 @@ export default async function (body, headers, env) {
         console.warn('Facebook event skipped')
     }
 
-    if (env.GA_MEASUREMENT_ID && env.GA_ACCESS_TOKEN && nameMap.ga) {
+    if (env.GA_MEASUREMENT_ID && env.GA_ACCESS_TOKEN && eventMap.ga) {
         const gaPayload = {
             client_id: user?.clientId,
             user_properties: {
@@ -109,13 +114,13 @@ export default async function (body, headers, env) {
             },
             events: [
                 {
-                    name: nameMap.ga,
+                    name: eventMap.ga,
                     params: {
                         page_location: referrer,
                         page_referrer: referrer,
                         event_id: id,
                         engagement_time_msec: 1,
-                        ...utms
+                        ...referrerParams
                     }
                 }
             ]
