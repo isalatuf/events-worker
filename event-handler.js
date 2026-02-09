@@ -3,18 +3,26 @@ import handleGaEvent from './ga-event-handler.js'
 
 export default async function (body, headers, env) {
     const { event, user, id, cookies } = body || {}
-    console.log(event)
 
     if (!id) return console.error('Event id is missing')
     if (!event) return console.error('Event name is missing')
 
-    const eventMap = ({
+    const eventMap = {
         pageview: { fb: 'PageView', ga: 'page_view' },
         lead: { fb: 'Lead', ga: 'generate_lead' },
         signup: { fb: 'Lead', ga: 'sign_up' },
+        login: { fb: 'Login', ga: 'login' },
+        search: { fb: 'Search', ga: 'search' },
+        viewcontent: { fb: 'ViewContent', ga: 'view_item' },
+        addtocart: { fb: 'AddToCart', ga: 'add_to_cart' },
+        addtowishlist: { fb: 'AddToWishlist', ga: 'add_to_wishlist' },
         checkout: { fb: 'InitiateCheckout', ga: 'begin_checkout' },
-        purchase: { fb: 'Purchase', ga: 'purchase' }
-    })[event] || {}
+        addpaymentinfo: { fb: 'AddPaymentInfo', ga: 'add_payment_info' },
+        purchase: { fb: 'Purchase', ga: 'purchase' },
+        subscribe: { fb: 'Subscribe', ga: 'subscribe' },
+        contact: { fb: 'Contact', ga: 'contact' },
+        download: { fb: 'Download', ga: 'file_download' }
+    }[event]
 
     if (!eventMap) return console.error('Event name is invalid')
 
